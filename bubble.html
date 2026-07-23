@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔮 추억 공개 버블 퍼즐</title>
+  <style>
+    body {
+      background-color: #1e1b4b;
+      color: #ffffff;
+      font-family: 'Malgun Gothic', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+      font-size: 24px;
+      color: #a7f3d0;
+    }
+
+    p {
+      color: #cbd5e1;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+   /* 게임 화면 컨테이너 (배경 추억 사진) */
+    #game-container {
+      position: relative;
+      width: 400px;
+      height: 500px;
+      margin: 0 auto;
+      border: 4px solid #6366f1;
+      border-radius: 12px;
+      /*box-shadow: 0 10px 25px rgba(0,0,0,0.5);*/
+      
+      /* 💡 사진 설정 */
+      background-image: url('img/멀쩡4 핑퐁게임.jpg');
+      
+      background-size: 500px 180px; 
+      
+      /* 2. 사진이 반복되어 출력되지 않도록 설정 */
+      background-repeat: no-repeat; 
+      
+      /* 3. 사진을 중앙 상단에 배치 (필요에 따라 left top, right top 등으로 변경 가능) */
+      background-position: center top; 
+      
+      overflow: hidden;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    /* 축하 모달 팝업 */
+    #modal {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #1e293b;
+      padding: 30px 20px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      width: 80%;
+      z-index: 10;
+      animation: pop 0.4s ease-out;
+    }
+
+    @keyframes pop {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    #modal h2 {
+      color: #e11d48;
+      font-size: 26px;
+      margin: 0 0 10px 0;
+    }
+
+    #modal p {
+      color: #334155;
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .retry-btn {
+      background: #f43f5e;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🔮 추억 공개 퍼즐 버블</h1>
+  <p>구슬을 맞춰 터뜨리면 숨겨진 언니/오빠의 사진이 드러납니다!</p>
+
+  <div id="game-container">
+    <canvas id="bubbleCanvas" width="400" height="500"></canvas>
+    
+    <div id="modal">
+      <h2>🎉 HAPPY BIRTHDAY! 🎉</h2>
+      <p💜>메타메타 메타몽이 된 우리💜</p>
+      <button class="retry-btn" onclick="location.reload()">다시 하기 🔄</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('bubbleCanvas');
+    const ctx = canvas.getContext('2d');
+    const modal = document.getElementById('modal');
+
+    const RADIUS = 20;
+    const INITIAL_ROWS = 5; // 처음 시작할 때 구슬이 배치될 행 수
+    const MAX_ROWS = 12;     // 아래로 쌓일 수 있는 최대 행 수 (충분히 크게 설정)
+    const COLS = 10;
+    const ALL_COLORS = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b']; // 분홍, 파랑, 초록, 노랑
+
+    let grid = [];
+    let fallingBubbles = [];
+
+    // 1. 구슬 그리드 배열 확장 초기화
+    function initGrid() {
+      for (let r = 0; r < MAX_ROWS; r++) {
+        grid[r] = [];
+        for (let c = 0; c < COLS; c++) {
+          grid[r][c] = null;
+        }
+      }
+
+      // 초기 구슬 3~4개씩 뭉쳐서 배치
+      for (let r = 0; r < INITIAL_ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c] === null) {
+            const randomColor = ALL_COLORS[Math.floor(Math.random() * ALL_COLORS.length)];
+            const clusterSize = Math.floor(Math.random() * 2) + 3;
+            let count = 0;
+            
+            for (let dr = 0; dr < 2 && count < clusterSize; dr++) {
+              for (let dc = 0; dc < 2 && count < clusterSize; dc++) {
+                if (r + dr < INITIAL_ROWS && c + dc < COLS && grid[r + dr][c + dc] === null) {
+                  grid[r + dr][c + dc] = randomColor;
+                  count++;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    initGrid();
+
+    // 2. 현재 화면에 남아있는 구슬 색상만 추출
+    function getAvailableColors() {
+      const activeColors = new Set();
+      for (let r = 0; r < MAX_ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c]) activeColors.add(grid[r][c]);
+        }
+      }
+      return Array.from(activeColors);
+    }
+
+    function getNextShooterColor() {
+      const available = getAvailableColors();
+      if (available.length === 0) return ALL_COLORS[0];
+      return available[Math.floor(Math.random() * available.length)];
+    }
+
+    // 발사대 구슬
+    let shooter = {
+      x: canvas.width / 2,
+      y: canvas.height - 30,
+      color: getNextShooterColor(),
+      dx: 0,
+      dy: 0,
+      isShooting: false
+    };
+
+    // 마우스 클릭 시 발사
+    canvas.addEventListener('click', (e) => {
+      if (shooter.isShooting) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const angle = Math.atan2(mouseY - shooter.y, mouseX - shooter.x);
+      const SPEED = 6.5; // 속도감 조절
+      shooter.dx = Math.cos(angle) * SPEED;
+      shooter.dy = Math.sin(angle) * SPEED;
+      shooter.isShooting = true;
+    });
+
+    // 게임 업데이트 루프
+    function update() {
+      if (shooter.isShooting) {
+        shooter.x += shooter.dx;
+        shooter.y += shooter.dy;
+
+        // 좌우 벽 반사
+        if (shooter.x - RADIUS < 0 || shooter.x + RADIUS > canvas.width) {
+          shooter.dx *= -1;
+        }
+
+        // 천장에 부딪히거나 기존 구슬과 부딪힌 경우 정착
+        if (shooter.y - RADIUS <= 0 || checkHitGrid()) {
+          snapToNearestEmptySlot();
+        }
+      }
+
+      // 떨어지는 중력 연출 업데이트
+      for (let i = fallingBubbles.length - 1; i >= 0; i--) {
+        let b = fallingBubbles[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        b.vy += 0.4;
+
+        if (b.y - RADIUS > canvas.height) {
+          fallingBubbles.splice(i, 1);
+        }
+      }
+
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    // 충돌 확인 (구슬 간 거리 계산)
+    function checkHitGrid() {
+      for (let r = 0; r < MAX_ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c]) {
+            const bx = c * RADIUS * 2 + RADIUS;
+            const by = r * RADIUS * 2 + RADIUS;
+            const dist = Math.hypot(shooter.x - bx, shooter.y - by);
+            if (dist < RADIUS * 1.8) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    // 3. 가장 가까운 빈 공간을 찾아 색 변형 없이 '아래로 쌓이도록' 정착시키는 핵심 함수
+    function snapToNearestEmptySlot() {
+      let targetR = Math.round((shooter.y - RADIUS) / (RADIUS * 2));
+      let targetC = Math.round((shooter.x - RADIUS) / (RADIUS * 2));
+
+      targetR = Math.max(0, Math.min(MAX_ROWS - 1, targetR));
+      targetC = Math.max(0, Math.min(COLS - 1, targetC));
+
+      // 이미 해당 위치에 다른 구슬이 존재한다면, 주변의 가장 가까운 '빈 칸'을 탐색
+      if (grid[targetR][targetC] !== null) {
+        let bestDist = Infinity;
+        let bestR = targetR;
+        let bestC = targetC;
+
+        for (let r = 0; r < MAX_ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            if (grid[r][c] === null) {
+              const slotX = c * RADIUS * 2 + RADIUS;
+              const slotY = r * RADIUS * 2 + RADIUS;
+              const dist = Math.hypot(shooter.x - slotX, shooter.y - slotY);
+
+              if (dist < bestDist) {
+                bestDist = dist;
+                bestR = r;
+                bestC = c;
+              }
+            }
+          }
+        }
+        targetR = bestR;
+        targetC = bestC;
+      }
+
+      // 기존 구슬에 영향을 주지 않고 자신만 빈 공간에 쌓임
+      grid[targetR][targetC] = shooter.color;
+      popBubbles(targetR, targetC, shooter.color);
+
+      // 발사대 초기화
+      shooter.x = canvas.width / 2;
+      shooter.y = canvas.height - 30;
+      shooter.color = getNextShooterColor();
+      shooter.isShooting = false;
+
+      checkWin();
+    }
+
+    // 4. 같은 색 구슬 감지 및 중력 낙하
+    function popBubbles(r, c, targetColor) {
+      let connected = [];
+      let queue = [[r, c]];
+      let visited = Array.from({ length: MAX_ROWS }, () => Array(COLS).fill(false));
+      visited[r][c] = true;
+
+      while (queue.length > 0) {
+        let [currR, currC] = queue.shift();
+        connected.push([currR, currC]);
+
+        const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        for (let [dr, dc] of dirs) {
+          let nr = currR + dr, nc = currC + dc;
+          if (nr >= 0 && nr < MAX_ROWS && nc >= 0 && nc < COLS) {
+            if (!visited[nr][nc] && grid[nr][nc] === targetColor) {
+              visited[nr][nc] = true;
+              queue.push([nr, nc]);
+            }
+          }
+        }
+      }
+
+      // 2개 이상 맞닿으면 중력으로 아래로 떨어지며 파괴
+      if (connected.length >= 2) {
+        connected.forEach(([pr, pc]) => {
+          fallingBubbles.push({
+            x: pc * RADIUS * 2 + RADIUS,
+            y: pr * RADIUS * 2 + RADIUS,
+            color: grid[pr][pc],
+            vx: (Math.random() - 0.5) * 4,
+            vy: -2
+          });
+          grid[pr][pc] = null;
+        });
+      }
+    }
+
+    // 모든 구슬 제거 완료 시 승리
+    function checkWin() {
+      let remaining = 0;
+      for (let r = 0; r < MAX_ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c] !== null) remaining++;
+        }
+      }
+
+      if (remaining === 0) {
+        setTimeout(() => { modal.style.display = 'block'; }, 500);
+      }
+    }
+
+    // 캔버스 그리기
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 격자 구슬들 그리기
+      for (let r = 0; r < MAX_ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c]) {
+            drawBubble(c * RADIUS * 2 + RADIUS, r * RADIUS * 2 + RADIUS, grid[r][c]);
+          }
+        }
+      }
+
+      // 떨어지는 중력 구슬 그리기
+      fallingBubbles.forEach(b => {
+        drawBubble(b.x, b.y, b.color);
+      });
+
+      // 발사대 구슬 그리기
+      drawBubble(shooter.x, shooter.y, shooter.color);
+    }
+
+    function drawBubble(x, y, color) {
+      ctx.beginPath();
+      ctx.arc(x, y, RADIUS - 2, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.closePath();
+    }
+
+    update();
+  </script>
+</body>
+</html>

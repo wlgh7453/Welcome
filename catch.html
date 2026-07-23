@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>행복 받기 게임</title>
+<style>
+  body { 
+    text-align: center; 
+    background: #f0fdf4; 
+    font-family: sans-serif; 
+    margin: 0;
+    padding: 10px;
+    touch-action: manipulation; /* 모바일 더블탭 확대 방지 */
+  }
+
+  canvas { 
+    background: #ffffff; 
+    border: 3px solid #16a34a; 
+    border-radius: 8px; 
+    max-width: 100%; /* 모바일 화면에 맞춰 자동으로 크기 조절 */
+    height: auto;
+  }
+
+  #gameOverModal {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.95);
+    color: #1e293b;
+    padding: 30px 20px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 280px;
+    z-index: 100;
+  }
+  #gameOverModal h3 { margin-top: 0; font-size: 20px; }
+  #gameOverModal p { font-size: 15px; line-height: 1.5; color: #334155; }
+  #gameOverModal button {
+    background: #16a34a;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  /* 💡 [추가] 모바일 전용 조작 버튼 스타일 */
+  .mobile-controls {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 400px;
+    margin: 15px auto 0;
+    gap: 15px;
+  }
+
+  .control-btn {
+    flex: 1;
+    padding: 18px 0;
+    font-size: 24px;
+    font-weight: bold;
+    background: #22c55e;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    user-select: none; /* 터치 시 텍스트 드래그 선택 방지 */
+    -webkit-user-select: none;
+  }
+
+  .control-btn:active {
+    background: #15803d;
+    transform: translateY(2px);
+  }
+</style>
+</head>
+<body>
+<h2>좋은 건 받고! (🎂, 💰) 스트레스는 피하자! (🌀, 🧟)</h2>
+<p>키보드 방향키 또는 아래 버튼으로 이동하세요!</p>
+
+<div style="position: relative; width: 100%; max-width: 400px; margin: 0 auto;">
+  <canvas id="gameCanvas" width="400" height="500"></canvas>
+
+  <!-- 게임 종료 모달 팝업 -->
+  <div id="gameOverModal">
+    <h3 id="modalTitle"></h3>
+    <p id="modalMessage"></p>
+    <button onclick="location.reload()">다시 하기 🔄</button>
+  </div>
+
+  <!-- 💡 [추가] 핸드폰용 좌/우 조작 버튼 -->
+  <div class="mobile-controls">
+    <button class="control-btn" id="btnLeft">◀ 왼쪽</button>
+    <button class="control-btn" id="btnRight">오른쪽 ▶</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// 게임 종료 상태 변수 및 모달 엘리먼트
+let isGameOver = false;
+const modal = document.getElementById("gameOverModal");
+const modalTitle = document.getElementById("modalTitle");
+const modalMessage = document.getElementById("modalMessage");
+
+// 플레이어 이미지 불러오기
+const playerImg = new Image();
+playerImg.src = "img/야르렁.png"; // 언니/오빠 얼굴 사진 파일 경로
+
+let player = { x: 180, y: 440, size: 40, speed: 2 };
+let items = [];
+let score = 0;
+let keys = {};
+
+// 키보드 이벤트
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+// 💡 [추가] 모바일 버튼 터치 이벤트 처리
+const btnLeft = document.getElementById("btnLeft");
+const btnRight = document.getElementById("btnRight");
+
+const bindBtn = (btn, keyName) => {
+  // 마우스/터치 누를 때
+  const start = (e) => { e.preventDefault(); keys[keyName] = true; };
+  // 손을 떼거나 벗어날 때
+  const end = (e) => { e.preventDefault(); keys[keyName] = false; };
+
+  btn.addEventListener("touchstart", start, { passive: false });
+  btn.addEventListener("touchend", end, { passive: false });
+  btn.addEventListener("mousedown", start);
+  btn.addEventListener("mouseup", end);
+  btn.addEventListener("mouseleave", end);
+};
+
+bindBtn(btnLeft, "ArrowLeft");
+bindBtn(btnRight, "ArrowRight");
+
+function spawnItem() {
+  if (isGameOver) return;
+
+  const types = [
+    { text: "🎂", score: 10 },
+    { text: "💰", score: 20 },
+    { text: "🌀", score: -10 },
+    { text: "🧟", score: -15 }
+  ];
+  const selected = types[Math.floor(Math.random() * types.length)];
+  items.push({ x: Math.random() * 360, y: 0, ...selected });
+}
+
+setInterval(spawnItem, 800);
+
+// 메인 프레임 업데이트
+function update() {
+  if (isGameOver) return;
+
+  if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
+  if (keys["ArrowRight"] && player.x < canvas.width - player.size) player.x += player.speed;
+
+  items.forEach((item, index) => {
+    item.y += 3;
+    // 충돌 판정
+    if (item.y > 420 && item.x > player.x - 20 && item.x < player.x + 40) {
+      score += item.score;
+      items.splice(index, 1);
+
+      checkGameOver();
+    }
+  });
+
+  draw();
+  requestAnimationFrame(update);
+}
+
+// 점수 조건 검사 및 팝업 띄우기
+function checkGameOver() {
+  if (score >= 100) {
+    isGameOver = true;
+    modalTitle.innerText = "🎉 축하합니다!";
+    modalTitle.style.color = "#16a34a";
+    modalMessage.innerText = "동생에게 생일축하를 받으셨습니다 💖";
+    modal.style.display = "block";
+  } else if (score <= -50) {
+    isGameOver = true;
+    modalTitle.innerText = "😱 아이고..";
+    modalTitle.style.color = "#dc2626";
+    modalMessage.innerText = "좀비가 되셨습니다.. 좀비가 되어 태풍으로 날아가셨어요 훨훨.. 🌪️";
+    modal.style.display = "block";
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 플레이어 그리기
+  if (playerImg.complete && playerImg.naturalWidth !== 0) {
+    ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
+  } else {
+    ctx.font = "30px Arial";
+    ctx.fillText("🧑", player.x, player.y + 30);
+  }
+
+  // 떨어지는 아이템들 그리기
+  items.forEach(item => {
+    ctx.font = "28px Arial";
+    ctx.fillText(item.text, item.x, item.y);
+  });
+
+  // 점수 표시
+  ctx.fillStyle = "#15803d";
+  ctx.font = "bold 18px Arial";
+  ctx.fillText("현재 점수: " + score, 15, 30);
+}
+
+// 게임 실행
+update();
+</script>
+</body>
+</html>
