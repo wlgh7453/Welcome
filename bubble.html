@@ -226,7 +226,7 @@
       const mouseY = e.clientY - rect.top;
 
       const angle = Math.atan2(mouseY - shooter.y, mouseX - shooter.x);
-      const SPEED = 15; // 속도감 조절
+      const SPEED = 30; // 속도감 조절
       shooter.dx = Math.cos(angle) * SPEED;
       shooter.dy = Math.sin(angle) * SPEED;
       shooter.isShooting = true;
