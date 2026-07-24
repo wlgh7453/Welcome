@@ -102,23 +102,47 @@
       border-radius: 8px;
       cursor: pointer;
     }
+        /* 💡 메인 이동 버튼 전용 스타일 */
+  .main-btn {
+    width: 100%;
+    max-width: 400px;
+    margin: 10px auto 0;
+    padding: 12px 0;
+    font-size: 16px;
+    font-weight: bold;
+    background: #6366f1; /* 깔끔한 보라색 계열 */
+    color: white;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+  .main-btn:active {
+    background: #4f46e5;
+    transform: translateY(2px);
+  }
+
   </style>
 </head>
 <body>
-
+  <button class="main-btn" onclick="location.href='main.html'">메인으로 돌아가기</button>
   <h1>🔮 추억 공개 퍼즐 버블</h1>
   <p>구슬을 맞춰 터뜨리면 숨겨진 언니/오빠의 사진이 드러납니다!</p>
+  
+      
 
   <div id="game-container">
     <canvas id="bubbleCanvas" width="400" height="500"></canvas>
     
     <div id="modal">
-      <h2>🎉 HAPPY BIRTHDAY! 🎉</h2>
+      <h2>생일츄카포카칩🍟</h2>
+      <div style="margin: 10px 0;">
+        <img src="img/멀쩡4 핑퐁게임.jpg" alt="축하 사진" style="width: 100%; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+      </div>
       <p💜>메타메타 메타몽이 된 우리💜</p>
       <button class="retry-btn" onclick="location.reload()">다시 하기 🔄</button>
     </div>
   </div>
-
   <script>
     const canvas = document.getElementById('bubbleCanvas');
     const ctx = canvas.getContext('2d');
