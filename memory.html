@@ -14,9 +14,28 @@ justify-content: center; font-size: 24px; font-weight: bold; cursor: pointer; bo
 
 .card.flipped { background: #fff; border: 2px solid #f43f5e; }
 .card img { width: 100%; height: 100%; border-radius: 6px; object-fit: cover; }
+      .main-btn {
+    width: 100%;
+    max-width: 400px;
+    margin: 10px auto 0;
+    padding: 12px 0;
+    font-size: 16px;
+    font-weight: bold;
+    background: #f16363; /* 깔끔한 보라색 계열 */
+    color: white;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+  .main-btn:active {
+    background: #f16363;
+    transform: translateY(2px);
+  }
 </style>
 </head>
 <body>
+    <button class="main-btn" onclick="location.href='main.html'">메인으로 돌아가기</button>
 <h2> 카드 짝을 맞춰서 우리의 추억을 확인해봐!</h2>
 <div class="grid" id="grid"></div>
 <script>
@@ -45,7 +64,7 @@ if (selected[0].dataset.img === selected[1].dataset.img) {
 matchedCount += 2;
 selected = [];
 if (matchedCount === cardsData.length) {
-setTimeout(() => alert("앞으로 우리가 쌓아갈 추억이 더 많을것이야! 우하하"), 500);
+setTimeout(() => alert("앞으로 우리가 쌓아갈 추억이 더 많을것이야! (^///^)"), 500);
 }
 } else {
 setTimeout(() => {
