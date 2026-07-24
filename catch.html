@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>행복 받기 게임</title>
+<title>생일축하받기게임</title>
 <style>
   body { 
     text-align: center; 
@@ -79,10 +79,29 @@
     background: #15803d;
     transform: translateY(2px);
   }
+     .main-btn {
+    width: 100%;
+    max-width: 400px;
+    margin: 10px auto 0;
+    padding: 12px 0;
+    font-size: 16px;
+    font-weight: bold;
+    background: #46e59b; /* 깔끔한 보라색 계열 */
+    color: white;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+  .main-btn:active {
+    background: #46e59b;
+    transform: translateY(2px);
+  }
+  
 </style>
 </head>
 <body>
-<h2>좋은 건 받고! (🎂, 💰) 스트레스는 피하자! (🌀, 🧟)</h2>
+<h2>생일축하 받기(🎂, 🎁) 좀비가 될지도?!(🌀, 🧟)</h2>
 <p>키보드 방향키 또는 아래 버튼으로 이동하세요!</p>
 
 <div style="position: relative; width: 100%; max-width: 400px; margin: 0 auto;">
@@ -150,7 +169,7 @@ function spawnItem() {
 
   const types = [
     { text: "🎂", score: 10 },
-    { text: "💰", score: 20 },
+    { text: "🎁", score: 20 },
     { text: "🌀", score: -10 },
     { text: "🧟", score: -15 }
   ];
@@ -186,9 +205,9 @@ function update() {
 function checkGameOver() {
   if (score >= 100) {
     isGameOver = true;
-    modalTitle.innerText = "🎉 축하합니다!";
+    modalTitle.innerText = "👌축하합니다!";
     modalTitle.style.color = "#16a34a";
-    modalMessage.innerText = "동생에게 생일축하를 받으셨습니다 💖";
+    modalMessage.innerText = "동생에게 생일축하를 받으셨습니다╰(*°▽°*)╯";
     modal.style.display = "block";
   } else if (score <= -50) {
     isGameOver = true;
@@ -207,7 +226,7 @@ function draw() {
     ctx.drawImage(playerImg, player.x, player.y, player.size, player.size);
   } else {
     ctx.font = "30px Arial";
-    ctx.fillText("🧑", player.x, player.y + 30);
+    ctx.fillText("🫥", player.x, player.y + 30);
   }
 
   // 떨어지는 아이템들 그리기
