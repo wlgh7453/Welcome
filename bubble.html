@@ -116,6 +116,7 @@
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     cursor: pointer;
+    left: 50%;
   }
   .main-btn:active {
     background: #4f46e5;
@@ -225,7 +226,7 @@
       const mouseY = e.clientY - rect.top;
 
       const angle = Math.atan2(mouseY - shooter.y, mouseX - shooter.x);
-      const SPEED = 6.5; // 속도감 조절
+      const SPEED = 15; // 속도감 조절
       shooter.dx = Math.cos(angle) * SPEED;
       shooter.dy = Math.sin(angle) * SPEED;
       shooter.isShooting = true;
